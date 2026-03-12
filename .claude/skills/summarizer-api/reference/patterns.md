@@ -57,7 +57,7 @@ try {
   });
 
   for await (const chunk of stream) {
-    outputEl.textContent = chunk; // Update UI continuously
+    outputEl.textContent += chunk;
   }
 } catch (err) {
   if (err.name === 'AbortError') {
@@ -110,7 +110,7 @@ async function attachSummarizer(buttonEl, contentEl, resultEl) {
     buttonEl.disabled = true;
     resultEl.textContent = 'Preparing...';
 
-    const availability = await Summarizer.availability();
+    const availability = await Summarizer.availability({ outputLanguage: 'en' });
     if (availability === 'unavailable') {
       resultEl.textContent = 'Summarization not available on this device.';
       return;
@@ -120,6 +120,7 @@ async function attachSummarizer(buttonEl, contentEl, resultEl) {
       const summarizer = await Summarizer.create({
         type: 'key-points',
         length: 'medium',
+        outputLanguage: 'en',
         monitor(m) {
           m.addEventListener('downloadprogress', (e) => {
             const pct = Math.round(e.loaded * 100);
@@ -130,9 +131,10 @@ async function attachSummarizer(buttonEl, contentEl, resultEl) {
 
       resultEl.textContent = 'Summarizing...';
       const stream = summarizer.summarizeStreaming(contentEl.textContent);
+      resultEl.textContent = ''; // clear previous text
 
       for await (const chunk of stream) {
-        resultEl.textContent = chunk;
+        resultEl.textContent += chunk; // Note: += for incremental chunks!
       }
 
       summarizer.destroy();
